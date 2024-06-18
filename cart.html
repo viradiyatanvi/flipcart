@@ -1,0 +1,256 @@
+<style>
+  #searchInput {
+  width: 200px;
+  padding: 8px;
+  border: 1px solid #ccc; 
+  border-radius: 5px; 
+  outline: none;
+  margin-left: 100px;
+}
+
+#searchInput:focus {
+  border-color: #007bff;
+}
+
+</style>
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Clothing Store</title>
+  <link rel="stylesheet" href="src/style.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
+</head>
+
+<body>
+  <div class="navbar">
+    <a href="index.html">
+      <h2>Clothing Store</h2>
+    </a>
+
+    <a href="cart.html">
+      <div class="cart">
+        <i class="bi bi-cart2"></i>
+        <div id="cartAmount" class="cartAmount">0</div>
+      </div>
+    </a>
+
+  </div>
+
+  <input type="text" id="searchInput" oninput="searchProducts()" placeholder="search product">
+
+  <div id="label" class="text-center"></div>
+
+  <div class="shopping-cart" id="shopping-cart"></div>
+  
+</body>
+
+
+<script>
+  function searchProducts() {
+  let searchInput = document.getElementById("searchInput").value.toLowerCase();
+  let filteredProducts = shopItemsData.filter(product => {
+    return product.name.toLowerCase().includes(searchInput);
+  });
+  displayProducts(filteredProducts);
+}
+
+</script>
+<script>
+  function displayProducts(products) {
+  ShoppingCart.innerHTML = products.map(product => {
+    return `
+      <div class="cart-item">
+        <img width="100" src="${product.img}" alt="" />
+        <div class="details">
+          <div class="title-price-x">
+            <h4 class="title-price">
+              <p>${product.name}</p>
+              <p class="cart-item-price">$ ${product.price}</p>
+            </h4>
+          </div>
+          <div class="buttons">
+            <button onclick="addToCart('${product.id}')">Add to Cart</button>
+          </div>
+        </div>
+      </div>`;
+  }).join("");
+}
+
+</script>
+
+
+
+<script src="src/Data.js"></script>
+<script src="src/cart.js"></script>
+
+<script>
+
+  let shopItemsData = [
+    {
+      id: "a",
+      name: "Casual Shirt",
+      price: 45,
+      desc: "Lorem ipsum dolor sit amet consectetur adipisicing.",
+      img: "images/img-1.jpg",
+    },
+    {
+      id: "b",
+      name: "Office Shirt",
+      price: 100,
+      desc: "Lorem ipsum dolor sit amet consectetur adipisicing.",
+      img: "images/img-2.jpg",
+    },
+    // Add more product data here
+  ];
+  
+  let label = document.getElementById("label");
+  let ShoppingCart = document.getElementById("shopping-cart");
+  
+  let basket = JSON.parse(localStorage.getItem("data")) || [];
+  
+  let calculation = () => {
+    let cartIcon = document.getElementById("cartAmount");
+    cartIcon.innerHTML = basket.map((x) => x.item).reduce((x, y) => x + y, 0);
+  };
+  
+  calculation();
+  
+  let generateCartItems = (items) => {
+    if (items && items.length !== 0) {
+      ShoppingCart.innerHTML = items.map((x) => {
+        let { id, item } = x;
+        let search = shopItemsData.find((y) => y.id === id) || [];
+        return `
+          <div class="cart-item">
+            <img width="100" src=${search.img} alt="" />
+            <div class="details">
+              <div class="title-price-x">
+                <h4 class="title-price">
+                  <p>${search.name}</p>
+                  <p class="cart-item-price">$ ${search.price}</p>
+                </h4>
+                <i onclick="removeItem(${id})" class="bi bi-x-lg"></i>
+              </div>
+              <div class="buttons">
+                <i onclick="decrement(${id})" class="bi bi-dash-lg"></i>
+                <div id=${id} class="quantity">${item}</div>
+                <i onclick="increment(${id})" class="bi bi-plus-lg"></i>
+              </div>
+              <h3>$ ${item * search.price}</h3>
+            </div>
+          </div>
+        `;
+      }).join("");
+    } else {
+      ShoppingCart.innerHTML = ``;
+      label.innerHTML = `
+        <h2>Cart is Empty</h2>
+        <a href="index.html">
+          <button class="HomeBtn">Back to home</button>
+        </a>
+      `;
+    }
+  };
+  
+  let increment = (id) => {
+    let selectedItem = id;
+    let search = basket.find((x) => x.id === selectedItem.id);
+  
+    if (search === undefined) {
+      basket.push({
+        id: selectedItem.id,
+        item: 1,
+      });
+    } else {
+      search.item += 1;
+    }
+  
+    generateCartItems();
+    update(selectedItem.id);
+    localStorage.setItem("data", JSON.stringify(basket));
+  };
+  
+  let decrement = (id) => {
+    let selectedItem = id;
+    let search = basket.find((x) => x.id === selectedItem.id);
+  
+    if (search === undefined) return;
+    else if (search.item === 0) return;
+    else {
+      search.item -= 1;
+    }
+    update(selectedItem.id);
+    basket = basket.filter((x) => x.item !== 0);
+    generateCartItems();
+    localStorage.setItem("data", JSON.stringify(basket));
+  };
+  
+  let update = (id) => {
+    let search = basket.find((x) => x.id === id);
+    document.getElementById(id).innerHTML = search.item;
+    calculation();
+    TotalAmount();
+  };
+  
+  let removeItem = (id) => {
+    let selectedItem = id;
+    basket = basket.filter((x) => x.id !== selectedItem.id);
+    generateCartItems();
+    TotalAmount();
+    localStorage.setItem("data", JSON.stringify(basket));
+  };
+  
+  let clearCart = () => {
+    basket = [];
+    generateCartItems();
+    localStorage.setItem("data", JSON.stringify(basket));
+  };
+  
+  let TotalAmount = () => {
+    if (basket.length !== 0) {
+      let amount = basket
+        .map((x) => {
+          let { item, id } = x;
+          let search = shopItemsData.find((y) => y.id === id) || [];
+  
+          return item * search.price;
+        })
+        .reduce((x, y) => x + y, 0);
+      label.innerHTML = `
+        <h2>Total Bill : $ ${amount}</h2>
+        <button class="checkout">Checkout</button>
+        <button onclick="clearCart()" class="removeAll">Clear Cart</button>
+      `;
+    }
+  };
+  
+  TotalAmount();
+  
+  
+  // Function to filter items based on search query
+  function displayFilteredItems(searchQuery) {
+    let filteredItems = shopItemsData.filter(item => {
+      return item.name.toLowerCase().includes(searchQuery.toLowerCase());
+    });
+    generateCartItems(filteredItems);
+  }
+  
+  // Event listener for search input
+  let searchInput = document.getElementById('searchInput');
+  searchInput.addEventListener('input', function() {
+    let searchQuery = this.value.trim();
+    displayFilteredItems(searchQuery);
+  });
+  
+  // Initial display of all items
+  displayFilteredItems('');
+  
+  </script>
+  
+
+</html>
